@@ -99,12 +99,17 @@ testers.runNixOSTest {
         machine.wait_until_succeeds("systemctl -M local is-active default.target", timeout=300)
         machine.succeed("test $(machinectl status local | grep -c 'ID Shift: ') = 1")
         # The home directory is id-mapped, so the shifted uids inside the
-        # machine still see their own files rather than nobody's.
-        owner = machine.succeed(
-            "machinectl shell alice@local"
-            " /run/current-system/sw/bin/stat -c %U /home/alice/from-the-host"
+        # machine still see their own files rather than nobody's. The answer
+        # comes back through the same bind mount, which also shows that writes
+        # from inside reach the host.
+        machine.succeed(
+            "machinectl shell alice@local /bin/sh -c"
+            " 'stat -c %U /home/alice/from-the-host > /home/alice/owner'"
         )
+        machine.wait_until_succeeds("test -s /home/alice/owner")
+        owner = machine.succeed("cat /home/alice/owner")
         assert "alice" in owner, owner
+        machine.succeed("rm /home/alice/owner")
 
     with subtest("reset discards a machine so it is installed again"):
         machine.succeed("nsl reset --yes local")
