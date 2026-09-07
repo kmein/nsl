@@ -69,7 +69,7 @@ testers.runNixOSTest {
         machine.wait_until_succeeds("systemctl -M dl is-active default.target", timeout=300)
 
     with subtest("the machine sees the host user's home directory"):
-        machine.succeed("touch /home/alice/from-the-host")
+        machine.succeed("su - alice -c 'touch /home/alice/from-the-host'")
         machine.succeed(
             "systemd-run -M dl -P --wait -q --uid=alice"
             " /run/current-system/sw/bin/test -e /home/alice/from-the-host"
