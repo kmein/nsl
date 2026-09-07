@@ -58,12 +58,12 @@ drifted() {
 
 cmd_list() {
   found=
-  printf '%-16s %-12s %-14s %s\n' NAME DISTRO STATE USER
+  printf '%-14s %-20s %-14s %s\n' NAME DISTRO STATE USER
   for n in $(names); do
     found=1
     note=
     if drifted "$n"; then note=" (declaration changed, nsl reset to apply)"; fi
-    printf '%-16s %-12s %-14s %s%s\n' \
+    printf '%-14s %-20s %-14s %s%s\n' \
       "$n" "$(field "$n" distro)/$(field "$n" release)" "$(state_of "$n")" \
       "$(field "$n" user)" "$note"
   done
@@ -222,10 +222,10 @@ cmd_images() {
     server=$(field "$any" imageServer)
     arch=$(field "$any" arch)
   fi
+  printf '%-14s %-14s %-10s %s\n' DISTRO RELEASE VARIANT BUILT
   curl -fsSL "$server/meta/1.0/index-system" |
     awk -F';' -v d="$distro" -v a="$arch" \
-      'BEGIN { printf "%-14s %-14s %-10s %s\n", "DISTRO", "RELEASE", "VARIANT", "BUILT" }
-       $3 == a && (d == "" || $1 == d) { printf "%-14s %-14s %-10s %s\n", $1, $2, $4, $5 }' |
+      '$3 == a && (d == "" || $1 == d) { printf "%-14s %-14s %-10s %s\n", $1, $2, $4, $5 }' |
     sort -u -k1,1 -k2,2
 }
 

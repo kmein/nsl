@@ -11,6 +11,7 @@
   shadow,
   gnused,
   e2fsprogs,
+  getent,
 }:
 
 let
@@ -29,6 +30,7 @@ let
     shadow
     gnused
     e2fsprogs # chattr, to clear immutable files before deleting a machine
+    getent # looks up the host user the machine mirrors
   ];
 
   nsl = writeShellApplication {
