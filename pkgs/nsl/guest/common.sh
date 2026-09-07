@@ -40,10 +40,11 @@ if [ -n "$NSL_USER" ]; then
   if getent group "$NSL_SUDO_GROUP" >/dev/null 2>&1; then
     usermod -aG "$NSL_SUDO_GROUP" "$NSL_USER"
   fi
-  # No password: the host already decided who may enter this machine.
-  passwd -d "$NSL_USER" >/dev/null 2>&1 || true
+  # No password is ever valid for this account: the host decides who may enter
+  # the machine, and sudo inside it is passwordless through /etc/sudoers.d/nsl.
+  usermod -p '*' "$NSL_USER" >/dev/null 2>&1 || true
 
-  if [ ! -x "${NSL_SHELL#/}" ] && [ ! -x "$NSL_SHELL" ]; then
+  if [ ! -x "$NSL_SHELL" ]; then
     log "$NSL_SHELL is missing, falling back to /bin/sh"
     usermod -s /bin/sh "$NSL_USER"
   fi

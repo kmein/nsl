@@ -205,9 +205,14 @@ cmd_reset() {
 
 cmd_images() {
   distro=${1:-}
-  server=$(jq -r '.imageServer' "$(spec_of "$(names | head -n 1)")" 2>/dev/null) ||
-    server=https://images.linuxcontainers.org
-  arch=$(jq -r '.arch' "$(spec_of "$(names | head -n 1)")" 2>/dev/null) || arch=amd64
+  # Any machine's spec names the server and architecture this host uses.
+  server=https://images.linuxcontainers.org
+  arch=amd64
+  any=$(names | head -n 1)
+  if [ -n "$any" ]; then
+    server=$(field "$any" imageServer)
+    arch=$(field "$any" arch)
+  fi
   curl -fsSL "$server/meta/1.0/index-system" |
     awk -F';' -v d="$distro" -v a="$arch" \
       'BEGIN { printf "%-14s %-14s %-10s %s\n", "DISTRO", "RELEASE", "VARIANT", "BUILT" }
