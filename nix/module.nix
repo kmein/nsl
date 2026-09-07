@@ -383,7 +383,7 @@ in
       (lib.mapAttrs' (
         name: m:
         lib.nameValuePair "nsl-bootstrap-${name}" {
-          description = "Bootstrap ${m.distro} machine ${name}";
+          description = "Install NSL machine ${name} (${m.distro} ${m.release})";
           # Skipped once the machine has been bootstrapped. `nsl reset` removes
           # the marker along with the root filesystem.
           unitConfig = {
