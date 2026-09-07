@@ -91,6 +91,12 @@ fi
 if [ "$adapter" != none ]; then
   printf '%s\n' "$name" > "$root/etc/hostname"
 
+  # Programs that look the machine's own name up, sudo among them, complain on
+  # every invocation if nothing answers for it.
+  if ! grep -qE "[[:space:]]$name([[:space:]]|$)" "$root/etc/hosts" 2>/dev/null; then
+    printf '127.0.0.1\tlocalhost\n127.0.1.1\t%s\n' "$name" >> "$root/etc/hosts"
+  fi
+
   # The image has never been booted, so systemd would run its first boot wizard
   # and sit there waiting for someone to answer it on a console nobody is
   # watching. Distributions that build container images mask this themselves;
