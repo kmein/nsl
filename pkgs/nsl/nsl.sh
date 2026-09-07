@@ -226,7 +226,7 @@ cmd_images() {
   curl -fsSL "$server/meta/1.0/index-system" |
     awk -F';' -v d="$distro" -v a="$arch" \
       '$3 == a && (d == "" || $1 == d) { printf "%-14s %-14s %-10s %s\n", $1, $2, $4, $5 }' |
-    sort -u -k1,1 -k2,2
+    sort
 }
 
 command=${1:-list}
