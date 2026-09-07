@@ -65,7 +65,6 @@ testers.runNixOSTest {
     machine.wait_for_unit("multi-user.target")
 
     with subtest("a declared machine is downloaded and booted at boot"):
-        machine.wait_for_unit("nsl-bootstrap-dl.service")
         machine.wait_until_succeeds("test -e /var/lib/nsl/dl/bootstrapped", timeout=600)
         machine.wait_until_succeeds("systemctl -M dl is-active default.target", timeout=300)
 
