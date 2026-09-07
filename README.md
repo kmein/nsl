@@ -8,7 +8,7 @@ directory.
 
 ```nix
 {
-  inputs.nsl.url = "github:kfm/nsl";
+  inputs.nsl.url = "github:you/nsl";
 
   # in your NixOS configuration
   imports = [ inputs.nsl.nixosModules.default ];
