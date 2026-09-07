@@ -8,7 +8,8 @@ usage: nsl <command> [arguments]
   list                     machines declared on this host and their state
   shell <name> [cmd ...]   enter a machine as yourself, starting it if needed
   root <name> [cmd ...]    the same, as root
-  run <name> -- cmd ...    run a command non-interactively, passing on its exit code
+  run <name> -- cmd ...    run a command non-interactively, passing on its exit
+                           code and its output unaltered (needs root)
   start|stop|restart <name>
   status <name>            systemd status of the machine
   logs <name> [args ...]   the machine's journal (accepts journalctl arguments)
@@ -129,8 +130,16 @@ cmd_root() {
 cmd_run() {
   n=${1:?usage: nsl run <name> -- command ...}
   shift
-  [ "${1:-}" = -- ] && shift
+  if [ "${1:-}" = -- ]; then shift; fi
   [ $# -gt 0 ] || die "nsl run needs a command"
+  spec_of "$n" >/dev/null
+  # Unlike `nsl shell`, this speaks to the machine's own service manager, which
+  # means entering its namespaces: only root can do that, however the polkit
+  # rules are written. In exchange the command keeps real pipes and its exit
+  # code reaches the caller.
+  if [ "$(id -u)" != 0 ]; then
+    exec sudo "$0" run "$n" -- "$@"
+  fi
   user=$(field "$n" user)
   ensure_running "$n"
   set -- --machine="$n" --pipe --wait --quiet --collect ${user:+--uid="$user"} -- "$@"

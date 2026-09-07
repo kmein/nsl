@@ -54,14 +54,16 @@ Machines are real systemd systems, so services inside them work normally.
 | `nsl list` | machines and their state |
 | `nsl shell <name> [cmd]` | enter a machine, starting it if needed |
 | `nsl root <name> [cmd]` | the same, as root |
-| `nsl run <name> -- cmd` | run something non-interactively, exit code and all |
+| `nsl run <name> -- cmd` | run something non-interactively, exit code and all (needs root) |
 | `nsl start\|stop\|restart <name>` | |
 | `nsl status <name>`, `nsl logs <name>` | |
 | `nsl reset <name>` | throw a machine away and install it again |
 | `nsl images [distro]` | what the image server currently offers |
 
 Users mirrored into a machine may run all of these without authenticating; add
-others with `nsl.users`.
+others with `nsl.users`. Two exceptions ask for `sudo`: `nsl reset`, which
+deletes files, and `nsl run`, which speaks to the machine's own service manager
+in order to hand you back the command's exit code and unaltered output.
 
 ## Options
 
