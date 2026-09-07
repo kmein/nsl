@@ -79,10 +79,14 @@ else
   printf '%s\n' "$path" > "$state/image"
 fi
 
-[ -e "$root/etc/os-release" ] || {
-  echo "nsl: $root has no /etc/os-release, this does not look like a root filesystem" >&2
+# Distributions describe themselves in one of these two places, sometimes
+# through a symlink that only resolves inside the machine, so test for the
+# link itself rather than what it points at.
+if ! [ -e "$root/etc/os-release" ] && ! [ -L "$root/etc/os-release" ] &&
+  ! [ -e "$root/usr/lib/os-release" ]; then
+  echo "nsl: $root has no os-release, this does not look like a root filesystem" >&2
   exit 1
-}
+fi
 
 if [ "$adapter" != none ]; then
   printf '%s\n' "$name" > "$root/etc/hostname"
