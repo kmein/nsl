@@ -125,11 +125,14 @@ if [ "$adapter" != none ] && [ -n "$user$packages" ]; then
 
   echo "nsl: setting up $name"
   # Run the guest half inside the new root filesystem: package managers and
-  # useradd have to be the machine's own. The host network is shared here so
-  # that installing packages works; user namespacing is off, so files stay
-  # root-owned and are id-mapped later if the machine asks for it.
+  # useradd have to be the machine's own, which is also why PATH has to be
+  # spelled out; the host's points into the Nix store, which means nothing in
+  # here. The host network is shared so that installing packages works, and
+  # user namespacing is off, so files stay root-owned and are id-mapped later
+  # if the machine asks for it.
   systemd-nspawn --quiet --directory="$root" --as-pid2 --register=no --keep-unit \
     --console=pipe --settings=no --resolv-conf=replace-host \
+    --setenv=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
     --bind-ro="$NSL_GUEST_DIR:/run/nsl" \
     --bind-ro="$extra:/run/nsl-extra.sh" \
     --setenv=NSL_USER="$user" \
