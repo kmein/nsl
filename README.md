@@ -35,8 +35,9 @@ alice@ubuntu:~$ sudo apt install ripgrep
 alice@ubuntu:~$ rg -n TODO ~/src        # your real home directory
 ```
 
-The first `nsl shell` downloads the distribution, which takes a minute. After
-that the machine starts in about a second and keeps whatever you install in it.
+The first `nsl shell` downloads and installs the distribution, which takes
+about twenty seconds on a fast connection. After that the machine starts in a
+second or two and keeps whatever you put in it.
 
 ## What you get
 
@@ -126,9 +127,15 @@ NixOS 24.11 or newer, for `importctl`. The VM test needs KVM.
 ## Development
 
 ```console
-$ nix flake check -L      # runs the whole thing in a VM, offline
-$ nix run .#demo-vm       # a VM with five distributions declared
+$ nix flake check -L      # the whole thing in a VM, offline
+$ nix run .#smoke-vm      # installs five real distributions, checks them, reports
+$ nix run .#demo-vm       # the same five, to poke at by hand
 ```
+
+`nix flake check` builds a NixOS root filesystem and serves it from a second VM
+laid out like the real image server, so it never touches the network. That
+leaves the real server untested, which is what `smoke-vm` is for: run it after
+changing the bootstrap, or when the releases in `nix/registry.nix` look stale.
 
 ## How it works
 
