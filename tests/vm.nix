@@ -82,15 +82,14 @@ testers.runNixOSTest {
 
     with subtest("the mirrored user can enter and control the machine unprivileged"):
         machine.succeed("su - alice -c 'nsl shell dl /run/current-system/sw/bin/true'")
-        assert "1000" in machine.succeed(
-            "su - alice -c 'nsl run dl -- /run/current-system/sw/bin/id -u'"
-        )
-        # nsl run passes the command's exit code back to the caller.
-        machine.fail("su - alice -c 'nsl run dl -- /run/current-system/sw/bin/false'")
         machine.succeed("su - alice -c 'nsl stop dl'")
         machine.wait_until_succeeds("test $(systemctl is-active systemd-nspawn@dl) = inactive")
         machine.succeed("su - alice -c 'nsl start dl'")
         machine.wait_until_succeeds("systemctl -M dl is-active default.target", timeout=300)
+
+    with subtest("nsl run reports the command's exit code"):
+        assert "1000" in machine.succeed("nsl run dl -- /run/current-system/sw/bin/id -u")
+        machine.fail("nsl run dl -- /run/current-system/sw/bin/false")
 
     with subtest("the machine's journal is readable from the host"):
         machine.succeed("journalctl -M dl -n 1")
