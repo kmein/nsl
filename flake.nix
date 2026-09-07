@@ -11,14 +11,14 @@
         "aarch64-linux"
       ];
       forAllSystems = f: nixpkgs.lib.genAttrs systems (system: f nixpkgs.legacyPackages.${system});
-      demoVm =
-        system:
+      exampleVm =
+        system: example:
         (nixpkgs.lib.nixosSystem {
           inherit system;
           modules = [
             "${nixpkgs}/nixos/modules/virtualisation/qemu-vm.nix"
             self.nixosModules.nsl
-            ./examples/demo-vm.nix
+            example
           ];
         }).config.system.build.vm;
     in
@@ -35,13 +35,24 @@
         vm = pkgs.callPackage ./tests/vm.nix { nslModule = self.nixosModules.nsl; };
       });
 
-      apps = forAllSystems (pkgs: {
-        demo-vm = {
-          type = "app";
-          program = "${demoVm pkgs.stdenv.hostPlatform.system}/bin/run-nsl-demo-vm";
-          meta.description = "NixOS VM with several NSL machines declared, for trying real images";
-        };
-      });
+      apps = forAllSystems (
+        pkgs:
+        let
+          system = pkgs.stdenv.hostPlatform.system;
+        in
+        {
+          demo-vm = {
+            type = "app";
+            program = "${exampleVm system ./examples/demo-vm.nix}/bin/run-nsl-demo-vm";
+            meta.description = "A VM with five distributions declared, to try NSL by hand";
+          };
+          smoke-vm = {
+            type = "app";
+            program = "${exampleVm system ./examples/smoke-vm.nix}/bin/run-nsl-smoke-vm";
+            meta.description = "Install and check five real distributions, print a report, power off";
+          };
+        }
+      );
 
       formatter = forAllSystems (pkgs: pkgs.nixfmt);
     };
