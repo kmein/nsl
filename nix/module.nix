@@ -249,6 +249,11 @@ let
           # The template unit passes -U; the .nspawn file wins because it is
           # started with --settings=override.
           PrivateUsers = if m.privateUsers then "pick" else false;
+          # Without this, the unit counts as started the moment nspawn forks,
+          # long before the machine has a service manager or a bus, and every
+          # command aimed at it fails. With it, starting the machine finishes
+          # when the machine says it is up.
+          NotifyReady = true;
           # nixpkgs patches systemd-nspawn to only recognise /etc/zoneinfo, so
           # the "auto" default leaves a dangling /etc/localtime in the machine.
           Timezone = "copy";

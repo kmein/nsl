@@ -80,7 +80,8 @@ wait_running() {
     [ "$i" -gt 600 ] && die "$n did not come up within 10 minutes"
     sleep 1
   done
-  # machinectl needs the machine registered before it can open a shell in it.
+  # The unit only reports success once the machine itself is up (NotifyReady),
+  # but machined registers it separately.
   i=0
   while ! machinectl show "$n" >/dev/null 2>&1; do
     i=$((i + 1))
