@@ -91,6 +91,12 @@ fi
 if [ "$adapter" != none ]; then
   printf '%s\n' "$name" > "$root/etc/hostname"
 
+  # The image has never been booted, so systemd would run its first boot wizard
+  # and sit there waiting for someone to answer it on a console nobody is
+  # watching. Distributions that build container images mask this themselves;
+  # the rest need us to.
+  systemctl --root="$root" mask systemd-firstboot.service || true
+
   if [ "$private_network" = true ]; then
     # The machine has its own namespace, so let its networkd configure host0
     # from systemd's shipped 80-container-host0.network.
