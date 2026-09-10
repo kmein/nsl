@@ -233,3 +233,8 @@ through the server's index, hands the download to `importctl` (which checks it
 against the published checksums and unpacks it), and then runs a short script
 inside the new filesystem to mirror your user and install packages. The `nsl`
 command is a front end over `machinectl`, `systemd-run` and `journalctl`.
+
+## License
+
+MIT. The distributions NSL downloads are not NSL: each image comes from its own
+project under its own terms.

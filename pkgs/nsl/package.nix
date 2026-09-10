@@ -67,6 +67,7 @@ stdenvNoCC.mkDerivation {
   meta = {
     description = "Run foreign Linux distributions on NixOS in systemd-nspawn machines";
     mainProgram = "nsl";
+    license = lib.licenses.mit;
     platforms = lib.platforms.linux;
   };
 }
