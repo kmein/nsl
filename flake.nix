@@ -29,10 +29,46 @@
       packages = forAllSystems (pkgs: rec {
         nsl = pkgs.callPackage ./pkgs/nsl/package.nix { };
         default = nsl;
+
+        # The module's options rendered as one HTML page, published to
+        # https://kmein.github.io/nsl/ by .github/workflows/docs.yml.
+        docs =
+          let
+            eval = pkgs.lib.evalModules {
+              # Only the option declarations are wanted; the module's config
+              # half defines NixOS options this bare evaluation does not have.
+              modules = [
+                self.nixosModules.nsl
+                { _module.check = false; }
+              ];
+              specialArgs = { inherit pkgs; };
+            };
+            doc = pkgs.nixosOptionsDoc {
+              options = builtins.removeAttrs eval.options [ "_module" ];
+              transformOptions =
+                o:
+                o
+                // {
+                  declarations = map (_: {
+                    name = "nix/module.nix";
+                    url = "https://github.com/kmein/nsl/blob/master/nix/module.nix";
+                  }) o.declarations;
+                };
+            };
+          in
+          pkgs.runCommand "nsl-docs" { nativeBuildInputs = [ pkgs.cmark ]; } ''
+            mkdir -p $out
+            {
+              cat ${./docs/head.html}
+              cmark --unsafe ${doc.optionsCommonMark}
+              cat ${./docs/foot.html}
+            } > $out/index.html
+          '';
       });
 
       checks = forAllSystems (pkgs: {
         vm = pkgs.callPackage ./tests/vm.nix { nslModule = self.nixosModules.nsl; };
+        docs = self.packages.${pkgs.stdenv.hostPlatform.system}.docs;
       });
 
       apps = forAllSystems (
