@@ -6,13 +6,111 @@ one command. Each one is a real distribution with its own package manager,
 running as a `systemd-nspawn` machine that shares your network and your home
 directory.
 
+WSL runs Linux on Windows because Windows is not Linux. NSL runs Linux on NixOS
+because, as far as many shell scripts can tell, NixOS is not Linux either.
+
+## Why
+
+You run NixOS. You have made your peace with `/usr/bin` containing one
+program, and with `./configure && make install` being something other people
+do. Most days this is fine. Some days the world sends you one of these:
+
+- A vendor `install.sh` that opens with `apt-get install` and closes with
+  strong opinions about `/opt`.
+- A prebuilt binary that `ls` can see and the kernel cannot. "No such file or
+  directory", it says, of a file that is right there.
+- A tutorial, a colleague and a Stack Overflow answer, all agreeing that the
+  fix is `sudo apt install libfoo-dev`.
+- A `.deb` you just built and would like to see installed once before telling
+  anyone it works.
+
+The NixOS answer to all of these is the same: understand the thing, package
+the thing, upstream the thing. It is the right answer. It is also a weekend.
+NSL is for the other six days. Declare an Ubuntu in your configuration, drop
+into it, run the script as written, and get on with whatever you were doing.
+Your home directory comes along, so the result lands where you would have put
+it anyway.
+
+### The installer that supports Ubuntu 22.04 and 24.04
+
+The tool you need ships as `curl | sh`. The script wants `apt`, `/usr/lib`
+and a `/etc/os-release` it has heard of. Give it all three:
+
+```console
+$ nsl shell ubuntu
+nsl: installing ubuntu resolute, this happens once
+alice@ubuntu:~$ curl -fsSL https://example.com/install.sh | sh
+alice@ubuntu:~$ exit
+$ ls ~/.local/bin
+some-tool
+```
+
+The binary is now in `~/.local/bin` on both sides, because the machine's
+`~/.local/bin` is the host's. On the host it is a file. Inside the machine it
+is a program. Run it with `nsl shell ubuntu some-tool`, and whatever it writes
+lands in the same home directory either way.
+
+### Does it work on Fedora?
+
+You maintain something with an install script, or a `.deb` and an `.rpm`, and
+the bug reports arrive from distributions you do not run. Declare the
+distributions you do not run:
+
 ```nix
+nsl.machines = {
+  debian.distro = "debian";
+  fedora.distro = "fedora";
+  arch.distro = "archlinux";
+};
+```
+
+```console
+$ for m in debian fedora arch; do
+    nsl run $m -- ~/src/thing/install.sh && echo "$m: ok"
+  done
+```
+
+`nsl run` hands back the command's exit code and its output untouched, so this
+loop is a test, not a demonstration. The first run downloads three
+distributions, which is the only time it will. Three machines, one
+`nixos-rebuild switch`, and none of them can see the others' package manager,
+which is how they prefer it.
+
+### Following the tutorial as written
+
+The blog post says `sudo apt install` eleven times and `make` once. You could
+translate each line into a `shell.nix`, guessing which of the eleven packages
+is called something else in nixpkgs. Or:
+
+```console
+$ nsl shell ubuntu
+alice@ubuntu:~$ sudo apt install build-essential libgtk-3-dev libssl-dev
+alice@ubuntu:~$ cd ~/src/the-thing && make
+```
+
+When it works, you know what the derivation has to say, which is the hard
+part. When it does not, `nsl reset ubuntu` and nobody has to know.
+
+## Getting started
+
+```nix
+# flake.nix
 {
+  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
   inputs.nsl.url = "github:kmein/nsl";
 
-  # in your NixOS configuration
-  imports = [ inputs.nsl.nixosModules.default ];
+  outputs = { nixpkgs, nsl, ... }: {
+    nixosConfigurations.laptop = nixpkgs.lib.nixosSystem {
+      system = "x86_64-linux";
+      modules = [ nsl.nixosModules.default ./configuration.nix ];
+    };
+  };
+}
+```
 
+```nix
+# configuration.nix
+{
   nsl = {
     enable = true;
     defaultUser = "alice";
@@ -20,24 +118,33 @@ directory.
       ubuntu.distro = "ubuntu";
       arch = {
         distro = "archlinux";
-        packages = [ "base-devel" ];
+        packages = [ "base-devel" "neovim" "btop" "fastfetch" ];
       };
     };
   };
 }
 ```
 
-After `nixos-rebuild switch`:
+After `nixos-rebuild switch`, the first `nsl shell ubuntu` downloads and
+installs the distribution, which takes about twenty seconds on a fast
+connection. After that the machine starts in a second or two and keeps
+whatever you put in it.
 
-```console
-$ nsl shell ubuntu
-alice@ubuntu:~$ sudo apt install ripgrep
-alice@ubuntu:~$ rg -n TODO ~/src        # your real home directory
-```
+## Not to be confused with
 
-The first `nsl shell` downloads and installs the distribution, which takes
-about twenty seconds on a fast connection. After that the machine starts in a
-second or two and keeps whatever you put in it.
+- **[nix-ld](https://github.com/nix-community/nix-ld), [buildFHSEnv](https://nixos.org/manual/nixpkgs/stable/#sec-fhs-environments), [steam-run](https://wiki.nixos.org/wiki/Steam#FHS_environment_only).** These teach one program to lie about
+  where its libraries are. Useful when it is one program. NSL is for when it
+  is a whole distribution's worth of assumptions, and a package manager to go
+  with them.
+- **[distrobox](https://distrobox.it), [toolbox](https://containertoolbx.org).** The same idea on podman. If you like it, keep it.
+  NSL uses `systemd-nspawn`, so a machine is a real systemd system:
+  `machinectl` knows it, its journal lands in yours, and services inside it
+  work without ceremony.
+- **[docker](https://www.docker.com).** Containers you throw away. NSL machines are containers you live
+  in; they keep their state and are meant to.
+- **A virtual machine.** Shares nothing, boots slowly and costs RAM you were
+  using. An NSL machine shares your kernel, your network and your home, and
+  starts in a second or two.
 
 ## What you get
 
@@ -47,6 +154,9 @@ sides see the same files. The machine shares the host's network, so it needs no
 addresses or firewall rules of its own, and its journal shows up in the host's.
 
 Machines are real systemd systems, so services inside them work normally.
+
+Distributions: `debian`, `ubuntu`, `kali`, `archlinux`, `fedora`, `rockylinux`,
+`almalinux`, `centos`, `opensuse`, `nixos`.
 
 ## Commands
 
@@ -66,31 +176,8 @@ others with `nsl.users`. Two exceptions ask for `sudo`: `nsl reset`, which
 deletes files, and `nsl run`, which speaks to the machine's own service manager
 in order to hand you back the command's exit code and unaltered output.
 
-## Options
-
-Everything lives under `nsl.machines.<name>`:
-
-| Option | Default | |
-|---|---|---|
-| `distro` | | one of the distributions below |
-| `release` | current | a release the image server offers, see `nsl images` |
-| `image` | null | a root filesystem tarball to use instead of downloading one |
-| `user` | `nsl.defaultUser` | host user to mirror inside the machine |
-| `shell` | `/bin/bash` | that user's login shell, as a path inside the machine |
-| `bindHome` | true with a user | bind mount the user's home from the host |
-| `packages` | `[]` | packages installed during bootstrap |
-| `extraBootstrap` | `""` | shell commands run inside the machine during bootstrap |
-| `autoStart` | false | start the machine at boot |
-| `bindMounts` | `[]` | further host directories to expose |
-| `privateNetwork` | false | give the machine its own network namespace |
-| `privateUsers` | false | give the machine its own user namespace |
-| `nspawn` | `{}` | settings merged into `systemd.nspawn.<name>` |
-
-Top level: `nsl.enable`, `nsl.defaultUser`, `nsl.users`, `nsl.imageServer`,
-`nsl.package`.
-
-Distributions: `debian`, `ubuntu`, `kali`, `archlinux`, `fedora`, `rockylinux`,
-`almalinux`, `centos`, `opensuse`, `nixos`.
+Every option is documented at <https://kmein.github.io/nsl/>, or in
+`nix/module.nix` if you prefer the source.
 
 ## Things worth knowing
 
