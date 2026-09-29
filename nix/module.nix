@@ -202,7 +202,9 @@ let
   machines = cfg.machines;
   machineNames = lib.attrNames machines;
 
-  homeOf = m: if m.user == null then null else config.users.users.${m.user}.home;
+  # users.users is keyed by attribute, which need not equal the login name
+  hostUser = name: lib.findFirst (u: u.name == name) null (lib.attrValues config.users.users);
+  homeOf = m: if m.user == null then null else (hostUser m.user).home;
 
   # Runtime spec, read by nsl-bootstrap and by the nsl CLI.
   specOf =
@@ -359,7 +361,7 @@ in
           message = "nsl.machines.${name}: name must be a lowercase hostname (letters, digits and dashes, at most 63 characters).";
         }
         {
-          assertion = m.user == null || config.users.users ? ${m.user};
+          assertion = m.user == null || hostUser m.user != null;
           message = "nsl.machines.${name}: user '${toString m.user}' is not a user on this host.";
         }
         {
