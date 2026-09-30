@@ -27,7 +27,10 @@
         packages = [ "hello" ];
       };
       ubuntu.distro = "ubuntu";
-      arch.distro = "archlinux";
+      arch = {
+        distro = "archlinux";
+        aurPackages = [ "neofetch" ];
+      };
       fedora.distro = "fedora";
       rocky.distro = "rockylinux";
     };
@@ -84,6 +87,9 @@
         check "has its own hostname" nsl run "$m" -- hostname
         check "journal reaches the host" journalctl -M "$m" -n 1 -q
         check "unprivileged shell" runuser -u demo -- nsl shell "$m" /bin/sh -c "touch /home/demo/entered-$m"
+        if [ "$m" = arch ]; then
+          check "has its aur package" nsl run "$m" -- pacman -Qm neofetch
+        fi
         check "stops" nsl stop "$m"
       done
 

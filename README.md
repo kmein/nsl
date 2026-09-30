@@ -119,6 +119,7 @@ part. When it does not, `nsl reset ubuntu` and nobody has to know.
       arch = {
         distro = "archlinux";
         packages = [ "base-devel" "neovim" "btop" "fastfetch" ];
+        aurPackages = [ "visual-studio-code-bin" ];
       };
     };
   };
@@ -181,10 +182,10 @@ Every option is documented at <https://kmein.github.io/nsl/>, or in
 
 ## Things worth knowing
 
-**Bootstrap runs once.** `packages` and `extraBootstrap` shape a machine when it
-is first installed. Changing them later does nothing; install things from inside
-the machine, or run `nsl reset <name>` to build it again from scratch. `nsl list`
-marks machines whose declaration has moved on.
+**Bootstrap runs once.** `packages`, `aurPackages` and `extraBootstrap` shape a
+machine when it is first installed. Changing them later does nothing; install
+things from inside the machine, or run `nsl reset <name>` to build it again from
+scratch. `nsl list` marks machines whose declaration has moved on.
 
 **Images cannot be pinned by release alone.** The image server keeps only the
 last few daily builds, so two hosts bootstrapping the same machine a week apart

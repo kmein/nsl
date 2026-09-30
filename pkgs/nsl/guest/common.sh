@@ -56,6 +56,12 @@ if [ -n "$NSL_PACKAGES" ]; then
   pkg_install $NSL_PACKAGES
 fi
 
+if [ -n "${NSL_AUR_PACKAGES:-}" ]; then
+  log "installing $NSL_AUR_PACKAGES from the AUR"
+  # shellcheck disable=SC2086
+  aur_install $NSL_AUR_PACKAGES
+fi
+
 if [ -s /run/nsl-extra.sh ]; then
   log "running extraBootstrap"
   sh /run/nsl-extra.sh

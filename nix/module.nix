@@ -106,6 +106,17 @@ let
           '';
         };
 
+        aurPackages = lib.mkOption {
+          type = lib.types.listOf lib.types.str;
+          default = [ ];
+          example = [ "visual-studio-code-bin" ];
+          description = ''
+            AUR packages installed once during bootstrap with `yay`, which is
+            itself built from the AUR first. Only for `archlinux` machines with
+            a {option}`user`, since `makepkg` refuses to run as root.
+          '';
+        };
+
         extraBootstrap = lib.mkOption {
           type = lib.types.lines;
           default = "";
@@ -230,7 +241,9 @@ let
         sudoGroup = registry.${m.distro}.sudoGroup;
         adapter = registry.${m.distro}.adapter;
         extraBootstrap = pkgs.writeText "nsl-extra-${name}.sh" m.extraBootstrap;
-      };
+      }
+      # only when set, so existing machines keep their spec hash
+      // lib.optionalAttrs (m.aurPackages != [ ]) { inherit (m) aurPackages; };
     in
     base // { specHash = builtins.hashString "sha256" (builtins.toJSON base); };
 
@@ -363,6 +376,10 @@ in
         {
           assertion = m.user == null || hostUser m.user != null;
           message = "nsl.machines.${name}: user '${toString m.user}' is not a user on this host.";
+        }
+        {
+          assertion = m.aurPackages == [ ] || (registry.${m.distro}.adapter == "pacman" && m.user != null);
+          message = "nsl.machines.${name}: aurPackages needs an archlinux machine with a user to build them as.";
         }
         {
           assertion = !(config.containers ? ${name});

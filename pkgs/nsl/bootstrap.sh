@@ -35,6 +35,7 @@ extra=$(get extraBootstrap)
 spec_hash=$(get specHash)
 private_network=$(jq -r '.privateNetwork' "$spec")
 packages=$(jq -r '.packages | join(" ")' "$spec")
+aur_packages=$(jq -r '.aurPackages // [] | join(" ")' "$spec")
 
 root=/var/lib/machines/$name
 state=/var/lib/nsl/$name
@@ -156,6 +157,7 @@ if [ "$adapter" != none ] && [ -n "$user$packages" ]; then
     --setenv=NSL_SUDO_GROUP="$sudo_group" \
     --setenv=NSL_ADAPTER="$adapter" \
     --setenv=NSL_PACKAGES="$packages" \
+    --setenv=NSL_AUR_PACKAGES="$aur_packages" \
     -- /bin/sh /run/nsl/common.sh
 fi
 
